@@ -10,9 +10,9 @@ constexpr int PROXY_SERVER_PORT = 80;
 constexpr char PROXY_SERVER_PATH[] = "/proxy";
 
 // The https://server:port/path the proxy server should retrieve
-static const char REMOTE_SERVER[] = "eremiticengineer.com";
+static const char REMOTE_SERVER[] = "_theremoteserver_.com";
 static constexpr int REMOTE_SERVER_PORT = 443;
-static const char REMOTE_SERVER_PATH[] = "/sitemap.xml";
+static const char REMOTE_SERVER_PATH[] = "/";
 
 /*
  * The payload to send to the proxy server.
