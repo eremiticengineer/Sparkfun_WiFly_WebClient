@@ -6,6 +6,8 @@ This project does **not** use the original SparkFun WiFly library. Instead, it c
 
 The goal is to keep the original SparkFun WiFly Shield useful on modern Arduino toolchains despite the original software library no longer working reliably with current Arduino environments.
 
+The project makes use of the [ESP-01 HTTPS Gateway](https://github.com/eremiticengineer/esp01-lan-wifi-https-gateway) and the URLs and JSON payload are configured for this.
+
 ## Features
 
 * Direct SC16IS750 SPI communication
