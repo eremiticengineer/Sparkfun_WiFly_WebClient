@@ -22,7 +22,7 @@ The goal is to keep the original SparkFun WiFly Shield useful on modern Arduino 
 
 This project currently targets:
 
-* Arduino Uno
+* Arduino Uno or Arduino Mega 2560
 * SparkFun WiFly Shield
 * RN-131 Wi-Fi module
 * SC16IS750 SPI-to-UART bridge
@@ -34,6 +34,15 @@ D10  CS
 D11  MOSI
 D12  MISO
 D13  SCK
+```
+
+If using an Arduino Mega 2560, connect these pins:
+
+```text
+WiFly 10 -> Mega 53
+WiFly 11 -> Mega 51
+WiFly 12 -> Mega 50
+WiFly 13 -> Mega 52
 ```
 
 The `WiFlyRn131` class uses software SPI on these pins.
@@ -93,18 +102,27 @@ constexpr char WIFI_PASSWORD[] = "";
 
 The project uses the Arduino CLI.
 
-Compile for the Arduino Uno with:
+Compile for the Arduino with:
 
 ```bash
 arduino-cli compile --fqbn arduino:avr:uno Sparkfun_WiFly_WebClient
+
+or
+
+arduino-cli compile --fqbn arduino:avr:mega Sparkfun_WiFly_WebClient
 ```
 
 ## Uploading
 
-Connect the Arduino Uno and upload with:
+Connect the Arduino and upload with:
 
 ```bash
 arduino-cli upload --port /dev/ttyACM0 --fqbn arduino:avr:uno Sparkfun_WiFly_WebClient
+
+or
+
+arduino-cli upload --port /dev/ttyACM0 --fqbn arduino:avr:mega Sparkfun_WiFly_WebClient
+
 ```
 
 Change `/dev/ttyACM0` if your Arduino appears on a different serial device.
@@ -123,12 +141,12 @@ From the directory containing the `Sparkfun_WiFly_WebClient` project:
 cp secrets.example.hpp secrets.hpp
 
 arduino-cli compile \
-    --fqbn arduino:avr:uno \
+    --fqbn arduino:avr:uno|mega \
     Sparkfun_WiFly_WebClient
 
 arduino-cli upload \
     --port /dev/ttyACM0 \
-    --fqbn arduino:avr:uno \
+    --fqbn arduino:avr:uno|mega \
     Sparkfun_WiFly_WebClient
 ```
 
@@ -274,7 +292,7 @@ For HTTPS applications, a practical architecture is to send plain HTTP to a trus
 For example:
 
 ```text
-Arduino Uno
+Arduino
     |
     | HTTP
     v
@@ -343,7 +361,7 @@ This allows existing WiFly Shields to remain useful rather than becoming obsolet
 * Plain HTTP/TCP only
 * No modern HTTPS/TLS support
 * Designed around the SparkFun WiFly Shield hardware
-* Currently tested with the Arduino Uno
+* Currently tested with the Arduino Uno and Arduino Mega 2560
 * Software SPI is used on D10-D13
 * RN-131 command responses should remain relatively small on AVR boards
 
