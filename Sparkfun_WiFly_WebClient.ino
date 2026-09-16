@@ -85,7 +85,15 @@ void setup()
     Serial.println(F("HTTP response:"));
     Serial.println(F("----------------------------------------"));
 
-    if (!wifi.httpGet(SERVER, PORT, PATH, Serial)) {
+    // /proxy?server=eremiticengineer.com&port=443&path=/sitelist.xml
+    char proxyPath[180];
+    snprintf(proxyPath, sizeof(proxyPath),
+        "%s?server=%s&port=%d&path=%s",
+        PATH, PROXY_GET_REMOTE_SERVER, PROXY_GET_REMOTE_SERVER_PORT, PROXY_GET_REMOTE_SERVER_PATH
+    );
+    Serial.println(proxyPath);
+
+    if (!wifi.httpGet(SERVER, PORT, proxyPath, Serial)) {
         Serial.println();
         Serial.println(F("----------------------------------------"));
         Serial.println(F("HTTP GET failed."));
@@ -105,9 +113,9 @@ void setup()
     // 2 KB of SRAM. We do not store the HTTP response in a
     // String.
     // --------------------------------------------------------
+    #define HTTP_POST_ENDPOINT_AVAILABLE
     #ifdef HTTP_POST_ENDPOINT_AVAILABLE
-    const char json[] = "{\"temperature\":21.5,\"humidity\":67}";
-    if (!wifi.httpPost(SERVER, PORT, PATH, "application/json", API_KEY, json, Serial)) {
+    if (!wifi.httpPost(SERVER, PORT, PATH, "application/json", nullptr, PAYLOAD_FOR_PROXY_POST, Serial)) {
         Serial.println(F("HTTP POST failed."));
     }
     #endif

@@ -369,7 +369,11 @@ bool WiFlyRn131::command(const char* cmd, String* response, uint32_t timeoutMs)
 // join()
 // ============================================================
 
-bool WiFlyRn131::join(const char* ssid, const char* password, uint32_t timeoutMs)
+bool WiFlyRn131::join(
+    const char* ssid,
+    const char* password,
+    uint32_t timeoutMs
+)
 {
     if (!enterCommandMode()) {
         return false;
@@ -379,13 +383,12 @@ bool WiFlyRn131::join(const char* ssid, const char* password, uint32_t timeoutMs
 
     // --------------------------------------------------------
     // Enable RN-131 hardware flow control
-    //
-    // SC16IS750 RTS/CTS is already enabled.
     // --------------------------------------------------------
 
     flush();
     println("set uart flow 1");
     waitForTransmitComplete();
+
     if (!waitFor("AOK", 2000)) {
         return false;
     }
@@ -397,6 +400,31 @@ bool WiFlyRn131::join(const char* ssid, const char* password, uint32_t timeoutMs
     flush();
     println("set comm remote 0");
     waitForTransmitComplete();
+
+    if (!waitFor("AOK", 2000)) {
+        return false;
+    }
+
+    // --------------------------------------------------------
+    // WPA2-PSK / AES
+    // --------------------------------------------------------
+
+    flush();
+    println("set wlan auth 4");
+    waitForTransmitComplete();
+
+    if (!waitFor("AOK", 2000)) {
+        return false;
+    }
+
+    // --------------------------------------------------------
+    // Scan all channels
+    // --------------------------------------------------------
+
+    flush();
+    println("set wlan channel 0");
+    waitForTransmitComplete();
+
     if (!waitFor("AOK", 2000)) {
         return false;
     }
@@ -405,22 +433,36 @@ bool WiFlyRn131::join(const char* ssid, const char* password, uint32_t timeoutMs
     // SSID
     // --------------------------------------------------------
 
-    snprintf(commandBuffer, sizeof(commandBuffer), "set wlan ssid %s", ssid);
+    snprintf(
+        commandBuffer,
+        sizeof(commandBuffer),
+        "set wlan ssid %s",
+        ssid
+    );
+
     flush();
     println(commandBuffer);
     waitForTransmitComplete();
+
     if (!waitFor("AOK", 2000)) {
         return false;
     }
 
     // --------------------------------------------------------
-    // Passphrase
+    // WPA/WPA2 passphrase
     // --------------------------------------------------------
 
-    snprintf(commandBuffer, sizeof(commandBuffer), "set wlan phrase %s", password);
+    snprintf(
+        commandBuffer,
+        sizeof(commandBuffer),
+        "set wlan phrase %s",
+        password
+    );
+
     flush();
     println(commandBuffer);
     waitForTransmitComplete();
+
     if (!waitFor("AOK", 2000)) {
         return false;
     }
@@ -432,14 +474,14 @@ bool WiFlyRn131::join(const char* ssid, const char* password, uint32_t timeoutMs
     flush();
     println("join");
     waitForTransmitComplete();
+
     if (!waitFor("Associated!", timeoutMs)) {
         return false;
     }
 
-    /*
-     * Allow DHCP to complete.
-     */
+    // Allow DHCP to complete.
     delay(2000);
+
     return true;
 }
 
