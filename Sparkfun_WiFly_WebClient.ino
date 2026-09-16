@@ -85,15 +85,14 @@ void setup()
     Serial.println(F("HTTP response:"));
     Serial.println(F("----------------------------------------"));
 
-    // /proxy?server=eremiticengineer.com&port=443&path=/sitelist.xml
+    // Create the remote server/path param list
     char proxyPath[180];
     snprintf(proxyPath, sizeof(proxyPath),
         "%s?server=%s&port=%d&path=%s",
-        PATH, PROXY_GET_REMOTE_SERVER, PROXY_GET_REMOTE_SERVER_PORT, PROXY_GET_REMOTE_SERVER_PATH
+        PROXY_SERVER_PATH, REMOTE_SERVER, REMOTE_SERVER_PORT, REMOTE_SERVER_PATH
     );
-    Serial.println(proxyPath);
 
-    if (!wifi.httpGet(SERVER, PORT, proxyPath, Serial)) {
+    if (!wifi.httpGet(PROXY_SERVER, PROXY_SERVER_PORT, proxyPath, Serial)) {
         Serial.println();
         Serial.println(F("----------------------------------------"));
         Serial.println(F("HTTP GET failed."));
@@ -115,7 +114,7 @@ void setup()
     // --------------------------------------------------------
     #define HTTP_POST_ENDPOINT_AVAILABLE
     #ifdef HTTP_POST_ENDPOINT_AVAILABLE
-    if (!wifi.httpPost(SERVER, PORT, PATH, "application/json", nullptr, PAYLOAD_FOR_PROXY_POST, Serial)) {
+    if (!wifi.httpPost(PROXY_SERVER, PROXY_SERVER_PORT, PROXY_SERVER_PATH, "application/json", nullptr, PAYLOAD_FOR_PROXY_POST, Serial)) {
         Serial.println(F("HTTP POST failed."));
     }
     #endif
