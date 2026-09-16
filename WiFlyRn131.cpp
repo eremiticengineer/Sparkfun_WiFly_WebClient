@@ -548,3 +548,117 @@ bool WiFlyRn131::httpGet(const char* host, uint16_t port, const char* path, Stre
 
     return receivedAnything;
 }
+
+// WiFlyRn131.cpp
+
+bool WiFlyRn131::httpPost(
+    const char* host,
+    uint16_t port,
+    const char* path,
+    const char* contentType,
+    const char* apiKey,
+    const char* body,
+    Stream& output,
+    uint32_t timeoutMs
+)
+{
+    if (!enterCommandMode()) {
+        return false;
+    }
+
+    char openCommand[100];
+
+    snprintf(
+        openCommand,
+        sizeof(openCommand),
+        "open %s %u",
+        host,
+        port
+    );
+
+    flush();
+    println(openCommand);
+    waitForTransmitComplete();
+
+    if (!waitFor("*OPEN*", 10000)) {
+        return false;
+    }
+
+    const size_t bodyLength = strlen(body);
+
+    char contentLength[16];
+
+    snprintf(
+        contentLength,
+        sizeof(contentLength),
+        "%u",
+        static_cast<unsigned int>(bodyLength)
+    );
+
+    write("POST ");
+    write(path);
+    write(" HTTP/1.0\r\n");
+
+    write("Host: ");
+    write(host);
+    write("\r\n");
+
+    write("Content-Type: ");
+    write(contentType);
+    write("\r\n");
+
+    write("Content-Length: ");
+    write(contentLength);
+    write("\r\n");
+
+    if (apiKey != nullptr && apiKey[0] != '\0') {
+        write("X-API-KEY: ");
+        write(apiKey);
+        write("\r\n");
+    }
+
+    write("Connection: close\r\n");
+    write("User-Agent: RN131-Arduino\r\n");
+    write("\r\n");
+
+    write(body);
+
+    waitForTransmitComplete();
+
+    const uint32_t start = millis();
+    uint32_t lastData = millis();
+
+    bool receivedAnything = false;
+
+    constexpr uint32_t QUIET_TIMEOUT_MS = 10000;
+
+    while (millis() - start < timeoutMs) {
+        bool receivedThisPass = false;
+
+        while (available() > 0) {
+            const int value = read();
+
+            if (value < 0) {
+                continue;
+            }
+
+            output.write(static_cast<uint8_t>(value));
+
+            receivedAnything = true;
+            receivedThisPass = true;
+        }
+
+        if (receivedThisPass) {
+            lastData = millis();
+        }
+
+        if (
+            receivedAnything &&
+            millis() - lastData >= QUIET_TIMEOUT_MS
+        ) {
+            break;
+        }
+    }
+
+    return receivedAnything;
+}

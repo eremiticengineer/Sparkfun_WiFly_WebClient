@@ -85,7 +85,7 @@ void setup()
     Serial.println(F("HTTP response:"));
     Serial.println(F("----------------------------------------"));
 
-    if (!wifi.httpGet("google.com", 80, "/", Serial)) {
+    if (!wifi.httpGet(SERVER, PORT, PATH, Serial)) {
         Serial.println();
         Serial.println(F("----------------------------------------"));
         Serial.println(F("HTTP GET failed."));
@@ -95,6 +95,22 @@ void setup()
         Serial.println(F("----------------------------------------"));
         Serial.println(F("HTTP GET complete."));
     }
+
+    // --------------------------------------------------------
+    // HTTP POST
+    //
+    // The response is streamed directly to Serial.
+    //
+    // This is important on the Arduino Uno because it only has
+    // 2 KB of SRAM. We do not store the HTTP response in a
+    // String.
+    // --------------------------------------------------------
+    #ifdef HTTP_POST_ENDPOINT_AVAILABLE
+    const char json[] = "{\"temperature\":21.5,\"humidity\":67}";
+    if (!wifi.httpPost(SERVER, PORT, PATH, "application/json", API_KEY, json, Serial)) {
+        Serial.println(F("HTTP POST failed."));
+    }
+    #endif
 }
 
 // ------------------------------------------------------------

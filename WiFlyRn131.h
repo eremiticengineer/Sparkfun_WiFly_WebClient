@@ -40,6 +40,9 @@ public:
     //
     bool httpGet(const char* host, uint16_t port, const char* path, Stream& output, uint32_t timeoutMs = 30000);
 
+    bool httpPost(const char* host, uint16_t port, const char* path, const char* contentType, const char* apiKey,
+        const char* body, Stream& output, uint32_t timeoutMs = 30000);
+
     // Low-level UART access.
     int available();
 
