@@ -36,16 +36,24 @@ D12  MISO
 D13  SCK
 ```
 
-If using an Arduino Mega 2560, connect these pins:
+The `WiFlyRn131` class uses software SPI on these pins.
+
+## Arduino Mega 2560
+
+The WiFly Shield also works with the Arduino Mega 2560, but the Mega uses different hardware SPI pins from the Uno.
+
+The shield still uses D10 as chip select, but the SPI signals must be connected to the Mega's hardware SPI pins:
 
 ```text
-WiFly 10 -> Mega 53
-WiFly 11 -> Mega 51
-WiFly 12 -> Mega 50
-WiFly 13 -> Mega 52
+WiFly Shield    Mega 2560
+-----------     ---------
+D10 / CS    ->  D10
+D11 / MOSI  ->  D51
+D12 / MISO  ->  D50
+D13 / SCK   ->  D52
 ```
 
-The `WiFlyRn131` class uses software SPI on these pins.
+With these additional connections in place, the same `WiFlyRn131` driver can be used on the Mega 2560.
 
 ## Project Structure
 
