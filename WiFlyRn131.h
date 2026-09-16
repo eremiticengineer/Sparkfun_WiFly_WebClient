@@ -87,6 +87,9 @@ private:
     // Enhanced Feature Register.
     static constexpr uint8_t REG_EFR   = 0x02;
 
+    static constexpr uint8_t REG_TCR = 0x06;
+    static constexpr uint8_t REG_TLR = 0x07;
+
     // ========================================================
     // SC16IS750 bits
     // ========================================================
@@ -102,6 +105,8 @@ private:
 
     // Later SparkFun WiFly Shield crystal.
     static constexpr unsigned long XTAL_FREQUENCY = 14745600UL;
+
+    static constexpr uint8_t LSR_OVERRUN_ERROR = 1 << 1;
 
     // ========================================================
     // Software SPI

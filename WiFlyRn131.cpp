@@ -87,50 +87,160 @@ uint8_t WiFlyRn131::readRegister(uint8_t reg)
 
 bool WiFlyRn131::initialiseUart(unsigned long baudRate)
 {
-    /*
-     * UART divisor:
-     *
-     *           XTAL
-     * divisor = -----
-     *           baud * 16
-     */
+    // --------------------------------------------------------
+    // UART divisor
+    //
+    //             XTAL
+    // divisor = ---------
+    //           baud * 16
+    // --------------------------------------------------------
 
-    const unsigned long divisor = XTAL_FREQUENCY /
-        (baudRate * 16UL);
+    const unsigned long divisor =
+        XTAL_FREQUENCY / (baudRate * 16UL);
 
-    // Enable divisor latch.
+    // --------------------------------------------------------
+    // Set baud-rate divisor
+    // --------------------------------------------------------
+
     writeRegister(REG_LCR, 0x80);
-    writeRegister(REG_DLL, lowByte(divisor));
-    writeRegister(REG_DLM, highByte(divisor));
 
-    // Access EFR.
+    writeRegister(
+        REG_DLL,
+        lowByte(divisor)
+    );
+
+    writeRegister(
+        REG_DLM,
+        highByte(divisor)
+    );
+
+    // --------------------------------------------------------
+    // Access Enhanced Feature Register
+    // --------------------------------------------------------
+
     writeRegister(REG_LCR, 0xBF);
 
-    /*
-     * Match the original SparkFun configuration:
-     *
-     * RTS hardware flow control
-     * CTS hardware flow control
-     * enhanced functions
-     */
-    writeRegister(REG_EFR, EFR_ENABLE_CTS | EFR_ENABLE_RTS | EFR_ENABLE_ENHANCED_FUNCTIONS);
+    // Enable enhanced functions first.
+    //
+    // Do not enable RTS/CTS yet because the TCR thresholds
+    // should be configured before automatic flow control is
+    // enabled.
+    writeRegister(
+        REG_EFR,
+        EFR_ENABLE_ENHANCED_FUNCTIONS
+    );
 
-    // 8 data bits, 1 stop bit, no parity.
+    // --------------------------------------------------------
+    // Return to normal register set
+    // --------------------------------------------------------
+
     writeRegister(REG_LCR, 0x03);
 
-    // Reset TX and RX FIFOs.
-    writeRegister(REG_FCR, 0x06);
+    // --------------------------------------------------------
+    // Enable TCR/TLR register access
+    //
+    // MCR bit 2 enables access to TCR and TLR when enhanced
+    // functions are enabled.
+    // --------------------------------------------------------
 
-    // Enable FIFO.
-    writeRegister(REG_FCR, 0x01);
+    uint8_t mcr = readRegister(REG_MCR);
 
-    // Scratchpad test.
-    writeRegister(REG_SPR, 0x55);
+    mcr |= 0x04;
+
+    writeRegister(
+        REG_MCR,
+        mcr
+    );
+
+    // --------------------------------------------------------
+    // Configure automatic RTS flow-control thresholds
+    //
+    // TCR bits:
+    //
+    //   bits 3:0 = RX FIFO halt threshold / 4
+    //   bits 7:4 = RX FIFO resume threshold / 4
+    //
+    // Halt incoming UART data when RX FIFO reaches 48 bytes:
+    //
+    //   48 / 4 = 12 = 0x0C
+    //
+    // Resume incoming UART data when RX FIFO falls to 16 bytes:
+    //
+    //   16 / 4 = 4 = 0x04
+    //
+    // Therefore:
+    //
+    //   TCR = 0x4C
+    // --------------------------------------------------------
+
+    writeRegister(
+        REG_TCR,
+        0x4C
+    );
+
+    // --------------------------------------------------------
+    // Now enable automatic CTS and RTS flow control
+    // --------------------------------------------------------
+
+    writeRegister(REG_LCR, 0xBF);
+
+    writeRegister(
+        REG_EFR,
+        EFR_ENABLE_ENHANCED_FUNCTIONS |
+        EFR_ENABLE_CTS |
+        EFR_ENABLE_RTS
+    );
+
+    // --------------------------------------------------------
+    // 8 data bits, 1 stop bit, no parity
+    // --------------------------------------------------------
+
+    writeRegister(
+        REG_LCR,
+        0x03
+    );
+
+    // --------------------------------------------------------
+    // Reset TX and RX FIFOs
+    //
+    // Bit 1 = reset RX FIFO
+    // Bit 2 = reset TX FIFO
+    // --------------------------------------------------------
+
+    writeRegister(
+        REG_FCR,
+        0x06
+    );
+
+    // --------------------------------------------------------
+    // Enable FIFOs
+    // --------------------------------------------------------
+
+    writeRegister(
+        REG_FCR,
+        0x01
+    );
+
+    // --------------------------------------------------------
+    // Scratchpad test
+    //
+    // Confirms that register access is working.
+    // --------------------------------------------------------
+
+    writeRegister(
+        REG_SPR,
+        0x55
+    );
+
     if (readRegister(REG_SPR) != 0x55) {
         return false;
     }
 
-    writeRegister(REG_SPR, 0xAA);
+    writeRegister(
+        REG_SPR,
+        0xAA
+    );
+
     if (readRegister(REG_SPR) != 0xAA) {
         return false;
     }
@@ -496,7 +606,13 @@ bool WiFlyRn131::join(
 // This makes it suitable for the Arduino Uno's 2 KB SRAM.
 // ============================================================
 
-bool WiFlyRn131::httpGet(const char* host, uint16_t port, const char* path, Stream& output, uint32_t timeoutMs)
+bool WiFlyRn131::httpGet(
+    const char* host,
+    uint16_t port,
+    const char* path,
+    Stream& output,
+    uint32_t timeoutMs
+)
 {
     // --------------------------------------------------------
     // Enter RN-131 command mode
@@ -511,7 +627,15 @@ bool WiFlyRn131::httpGet(const char* host, uint16_t port, const char* path, Stre
     // --------------------------------------------------------
 
     char openCommand[100];
-    snprintf(openCommand, sizeof(openCommand), "open %s %u", host, port);
+
+    snprintf(
+        openCommand,
+        sizeof(openCommand),
+        "open %s %u",
+        host,
+        port
+    );
+
     flush();
     println(openCommand);
     waitForTransmitComplete();
@@ -529,63 +653,109 @@ bool WiFlyRn131::httpGet(const char* host, uint16_t port, const char* path, Stre
 
     // --------------------------------------------------------
     // Send HTTP request
-    //
-    // Write this in pieces rather than constructing a large
-    // request buffer in SRAM.
     // --------------------------------------------------------
 
     write("GET ");
     write(path);
     write(" HTTP/1.0\r\n");
+
     write("Host: ");
     write(host);
-    write("\r\n" "Connection: close\r\n" "User-Agent: RN131-Arduino\r\n" "\r\n");
+    write("\r\n");
+
+    write("Connection: close\r\n");
+    write("User-Agent: RN131-Arduino\r\n");
+    write("\r\n");
+
     waitForTransmitComplete();
 
     // --------------------------------------------------------
     // Stream HTTP response
+    //
+    // Drain the SC16IS750 RX FIFO efficiently.
+    //
+    // Avoid calling read() here because read() performs another
+    // RXLVL check for every single byte. We have already obtained
+    // the number of bytes waiting from available().
     // --------------------------------------------------------
 
     const uint32_t start = millis();
     uint32_t lastData = millis();
+
     bool receivedAnything = false;
+    bool overrunDetected = false;
 
-    /*
-     * Since HTTP/1.0 + Connection: close is being used,
-     * the server should close the connection when finished.
-     *
-     * The quiet timeout is therefore only a safety mechanism.
-     *
-     * We allow a generous interval because the RN-131 UART is
-     * running at 9600 baud.
-     */
     constexpr uint32_t QUIET_TIMEOUT_MS = 10000;
-    while (millis() - start < timeoutMs) {
-        bool receivedThisPass = false;
-        while (available() > 0) {
-            const int value = read();
-            if (value < 0) {
-                continue;
-            }
 
-            /*
-             * Send directly to Serial or whichever Stream
-             * the caller supplied.
-             *
-             * No HTTP body is accumulated in SRAM.
-             */
-            output.write(static_cast<uint8_t>(value));
-            receivedAnything = true;
-            receivedThisPass = true;
+    while (millis() - start < timeoutMs) {
+
+        // ----------------------------------------------------
+        // Check UART status before draining the FIFO.
+        // ----------------------------------------------------
+
+        const uint8_t lsr = readRegister(REG_LSR);
+
+        if (lsr & LSR_OVERRUN_ERROR) {
+            overrunDetected = true;
         }
 
-        if (receivedThisPass) {
+        // ----------------------------------------------------
+        // Find out how many bytes are currently waiting.
+        // ----------------------------------------------------
+
+        const int bytesAvailable = available();
+
+        if (bytesAvailable > 0) {
+
+            // ------------------------------------------------
+            // Drain exactly that many bytes directly from RHR.
+            //
+            // This avoids:
+            //
+            //   available()
+            //   read()
+            //       -> available() again
+            //
+            // for every character.
+            // ------------------------------------------------
+
+            for (int i = 0; i < bytesAvailable; ++i) {
+
+                const uint8_t value =
+                    readRegister(REG_RHR);
+
+                output.write(value);
+
+                receivedAnything = true;
+            }
+
             lastData = millis();
         }
 
-        if (receivedAnything && millis() - lastData >= QUIET_TIMEOUT_MS) {
+        // ----------------------------------------------------
+        // Safety timeout.
+        //
+        // HTTP/1.0 with Connection: close should normally cause
+        // the RN-131 connection to close naturally.
+        // ----------------------------------------------------
+
+        if (
+            receivedAnything &&
+            millis() - lastData >= QUIET_TIMEOUT_MS
+        ) {
             break;
         }
+    }
+
+    // --------------------------------------------------------
+    // Diagnostic
+    // --------------------------------------------------------
+
+    if (overrunDetected) {
+        output.println();
+        output.println(
+            F("*** SC16IS750 RX OVERRUN DETECTED ***")
+        );
     }
 
     return receivedAnything;
